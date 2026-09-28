@@ -1,0 +1,17 @@
+semgrep
+typer
+pydantic
+jsonschema
+httpx
+orjson
+pyyaml
+pandas
+numpy
+scikit-learn
+tqdm
+tenacity
+psutil
+javalang
+pytest
+pytest-cov
+ruff
