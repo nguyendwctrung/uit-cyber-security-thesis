@@ -1,0 +1,60 @@
+schema_version: "1.0"
+dataset:
+  name: "OWASP Benchmark Java"
+  benchmark_version: "1.2"
+  repository: "https://github.com/OWASP-Benchmark/BenchmarkJava.git"
+  commit: "20cbf3d11123347e47ed89541e6942836def53f7"
+  commit_date: "2026-09-08"
+  clone_mode: "depth-1"
+  raw_directory: "datasets/raw/owasp-benchmark-java"
+  license: "GPL-2.0-only"
+  source_integrity:
+    pom_xml_sha256: "ee75d5340f744fbce14dafa6498fad8dbcfd15b1a2c96738e254a3451d090f8b"
+    expected_results_sha256: "f0311c850dea7f15125113f7cfdbd7ad612d7f5951c7331584f6981b6ae2d630"
+
+ground_truth:
+  file: "expectedresults-1.2.csv"
+  unit: "test case"
+  fields:
+    - "test name"
+    - "category"
+    - "real vulnerability"
+    - "cwe"
+  access_policy: "Evaluation only. Do not include labels in scanner commands, LLM prompts, or future RAG corpora."
+
+pilot:
+  pilot_id: "owasp-java-six-case-v1"
+  purpose: "Feasibility check for scanner outputs, normalization, and test-case matching; not a performance experiment."
+  source_directory: "src/main/java/org/owasp/benchmark/testcode"
+  cases:
+    - id: "BenchmarkTest00001"
+      category: "pathtraver"
+      real_vulnerability: true
+      cwe: 22
+    - id: "BenchmarkTest00003"
+      category: "hash"
+      real_vulnerability: true
+      cwe: 328
+    - id: "BenchmarkTest00006"
+      category: "cmdi"
+      real_vulnerability: true
+      cwe: 78
+    - id: "BenchmarkTest00008"
+      category: "sqli"
+      real_vulnerability: true
+      cwe: 89
+    - id: "BenchmarkTest00009"
+      category: "hash"
+      real_vulnerability: false
+      cwe: 328
+    - id: "BenchmarkTest00010"
+      category: "weakrand"
+      real_vulnerability: false
+      cwe: 330
+  label_counts:
+    positive: 4
+    negative: 2
+
+limitations:
+  - "This six-case pilot is not stratified and must not be reported as a dataset-level metric."
+  - "A scanner finding requires a documented test-case/CWE/location matcher before it can be scored."
