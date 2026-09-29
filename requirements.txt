@@ -1,6 +1,7 @@
 semgrep
 typer
 pydantic
+python-dotenv
 jsonschema
 httpx
 orjson
