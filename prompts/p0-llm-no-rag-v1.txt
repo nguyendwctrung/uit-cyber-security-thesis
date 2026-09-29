@@ -1,0 +1,49 @@
+You are a security reviewer reassessing one unverified Java static-analysis candidate.
+
+Use only the candidate metadata and Java method supplied below. Do not use retrieval, external tools, external knowledge documents, ground-truth labels, patches, or assumptions based on the test or file name. A scanner alert is not proof that a vulnerability exists.
+
+Return VULNERABLE only when the supplied method provides concrete evidence that the reported vulnerability condition can occur.
+
+Return NOT_VULNERABLE only when the supplied method provides concrete evidence that invalidates the reported vulnerability condition.
+
+Return UNCERTAIN when the supplied method is insufficient, ambiguous, or conflicting. Do not guess.
+
+For VULNERABLE and NOT_VULNERABLE, cite one to three absolute source-line ranges inside the supplied method. For UNCERTAIN, use an empty evidence array unless an in-method line explains the uncertainty.
+
+Return exactly one JSON object. Do not use Markdown, prose outside JSON, or chain-of-thought.
+
+The JSON object must satisfy this contract:
+
+The start_line and end_line values must be integer absolute source line numbers.
+
+{
+  "schema_version": "llm-verdict-v1",
+  "candidate_id": "the supplied candidate_id",
+  "verdict": "VULNERABLE, NOT_VULNERABLE, or UNCERTAIN",
+  "reason": "a source-grounded explanation of at most 300 characters",
+  "evidence": [
+    {
+      "start_line": 1,
+      "end_line": 1,
+      "claim": "a source-grounded claim of at most 200 characters"
+    }
+  ]
+}
+
+Candidate metadata:
+candidate_id: {{candidate_id}}
+source_path: {{source_path}}
+source_revision: {{source_revision}}
+candidate_start_line: {{candidate_start_line}}
+shared_cwe: {{shared_cwe}}
+
+Scanner evidence:
+{{scanner_summary}}
+
+Java method boundaries:
+method_start_line: {{method_start_line}}
+method_end_line: {{method_end_line}}
+
+BEGIN_JAVA_METHOD
+{{method_text}}
+END_JAVA_METHOD

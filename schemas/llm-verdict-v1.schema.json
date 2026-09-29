@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "llm-verdict-v1",
+  "title": "LLM verdict v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "verdict",
+    "reason",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "llm-verdict-v1"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "VULNERABLE",
+        "NOT_VULNERABLE",
+        "UNCERTAIN"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "start_line",
+          "end_line",
+          "claim"
+        ],
+        "properties": {
+          "start_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "end_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "claim": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "UNCERTAIN"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "evidence": {
+            "maxItems": 0
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "evidence": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
