@@ -18,6 +18,64 @@ def get_runtime_config():
     return url, model
 
 
+def get_api_base(url):
+    suffix = "/api/chat"
+
+    if not url.endswith(suffix):
+        raise ValueError(
+            "OLLAMA_URL must end with /api/chat."
+        )
+
+    return url[: -len(suffix)]
+
+
+def get_json_response(response, name):
+    if response.status_code != 200:
+        raise ValueError(
+            name
+            + " request failed with HTTP status "
+            + str(response.status_code)
+            + "."
+        )
+
+    return response.json()
+
+
+def get_model_info(client, timeout):
+    url, model = get_runtime_config()
+    api_base = get_api_base(url)
+
+    version_response = client.get(
+        api_base + "/api/version",
+        timeout=timeout,
+    )
+    version_data = get_json_response(
+        version_response,
+        "Ollama version",
+    )
+
+    tags_response = client.get(
+        api_base + "/api/tags",
+        timeout=timeout,
+    )
+    tags_data = get_json_response(
+        tags_response,
+        "Ollama tags",
+    )
+
+    for item in tags_data["models"]:
+        if item["name"] == model:
+            return {
+                "tag": model,
+                "digest": item["digest"],
+                "ollama_version": version_data["version"],
+            }
+
+    raise ValueError(
+        "Configured Ollama model was not found: " + model
+    )
+
+
 def request_chat(
     client,
     system_prompt,
@@ -44,7 +102,7 @@ def request_chat(
         "format": schema,
         "options": options,
     }
-    
+
     if on_request:
         on_request(payload)
 

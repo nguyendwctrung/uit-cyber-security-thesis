@@ -103,6 +103,16 @@ def make_paths(tmp_path):
     }
 
 
+class UnderBudgetTokenizer:
+    def apply_chat_template(
+        self,
+        messages,
+        add_generation_prompt,
+        tokenize,
+    ):
+        return [0]
+
+
 def run_once(monkeypatch, client, paths):
     monkeypatch.setenv(
         "OLLAMA_URL",
@@ -121,6 +131,8 @@ def run_once(monkeypatch, client, paths):
         client,
         OPTIONS,
         120,
+        UnderBudgetTokenizer(),
+        7680,
     )
 
 
@@ -236,3 +248,98 @@ def test_refuses_to_overwrite_existing_output(tmp_path, monkeypatch):
 
     assert paths["verdict_path"].read_text(encoding="utf-8") == "keep this file\n"
     assert not client.calls
+
+
+class OverBudgetTokenizer:
+    def apply_chat_template(
+        self,
+        messages,
+        add_generation_prompt,
+        tokenize,
+    ):
+        return list(range(7681))
+
+
+def test_over_budget_context_is_not_sent_to_ollama(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "OLLAMA_URL",
+        "http://127.0.0.1:11434/api/chat",
+    )
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+    paths = make_paths(tmp_path)
+    client = FakeClient(FakeResponse(200, "{}"))
+
+    run_contexts(
+        [make_context()],
+        PROMPT_PATH,
+        SCHEMA_PATH,
+        paths["verdict_path"],
+        paths["error_path"],
+        paths["request_dir"],
+        paths["response_dir"],
+        client,
+        OPTIONS,
+        120,
+        OverBudgetTokenizer(),
+        7680,
+    )
+
+    errors = read_rows(paths["error_path"])
+
+    assert paths["verdict_path"].read_text(encoding="utf-8") == ""
+    assert errors[0]["error_type"] == "context_window_exceeded"
+    assert not client.calls
+    assert not list(paths["request_dir"].glob("*.json"))
+    assert not list(paths["response_dir"].glob("*.json"))
+
+
+class BrokenTokenizer:
+    def apply_chat_template(
+        self,
+        messages,
+        add_generation_prompt,
+        tokenize,
+    ):
+        raise RuntimeError("tokenizer failed")
+
+
+def test_tokenizer_failure_is_not_sent_to_ollama(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setenv(
+        "OLLAMA_URL",
+        "http://127.0.0.1:11434/api/chat",
+    )
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+    paths = make_paths(tmp_path)
+    client = FakeClient(FakeResponse(200, "{}"))
+
+    run_contexts(
+        [make_context()],
+        PROMPT_PATH,
+        SCHEMA_PATH,
+        paths["verdict_path"],
+        paths["error_path"],
+        paths["request_dir"],
+        paths["response_dir"],
+        client,
+        OPTIONS,
+        120,
+        BrokenTokenizer(),
+        7680,
+    )
+
+    errors = read_rows(paths["error_path"])
+
+    assert paths["verdict_path"].read_text(encoding="utf-8") == ""
+    assert errors[0]["error_type"] == "tokenizer_error"
+    assert len(errors) == 1
+    assert not client.calls
+    assert not list(paths["request_dir"].glob("*.json"))
+    assert not list(paths["response_dir"].glob("*.json"))

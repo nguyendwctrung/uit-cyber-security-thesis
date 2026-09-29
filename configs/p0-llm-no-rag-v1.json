@@ -1,0 +1,45 @@
+{
+  "baseline_config_id": "p0-llm-no-rag-v1",
+  "rag_enabled": false,
+  "prompt": {
+    "path": "prompts/p0-llm-no-rag-v1.txt",
+    "version": "p0-llm-no-rag-v1",
+    "sha256": "2613f5bed09daae60e57696c4574e9e53d4f70e7ecbfca4679e7ffbd86e7f393"
+  },
+  "schema": {
+    "path": "schemas/llm-verdict-v1.schema.json",
+    "version": "llm-verdict-v1",
+    "sha256": "e9d48d87974e821d48bf5eec4f406b093a536c7f515f8a1e54ca700ff116121e"
+  },
+  "model": {
+    "tag": "qwen2.5-coder:7b",
+    "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364"
+  },
+  "tokenizer": {
+    "id": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "revision": "0b044f5762b0be9c48fc2b7bc216454c5eff0bb8",
+    "asset_dir": ".cache/tokenizers/Qwen2.5-Coder-7B-Instruct-0b044f5762b0be9c48fc2b7bc216454c5eff0bb8",
+    "transformers_version": "4.57.1",
+    "tokenizers_version": "0.22.1",
+    "jinja2_version": "3.1.6"
+  },
+  "request": {
+    "stream": false,
+    "timeout_seconds": 120,
+    "max_attempts": 1,
+    "parallelism": 1,
+    "options": {
+      "temperature": 0.0,
+      "seed": 42,
+      "top_p": 1.0,
+      "top_k": 40,
+      "min_p": 0.0,
+      "repeat_penalty": 1.0,
+      "num_ctx": 8192,
+      "num_predict": 512
+    }
+  },
+  "token_budget": {
+    "max_input_tokens": 7680
+  }
+}

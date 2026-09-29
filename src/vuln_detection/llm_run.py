@@ -4,6 +4,7 @@ from pathlib import Path
 from vuln_detection.ollama import request_chat
 from vuln_detection.prompt import render_prompt
 from vuln_detection.verdict import get_candidate_id, validate_verdict
+from vuln_detection.token_budget import count_request_tokens, ensure_within_input_budget
 
 
 def write_json(path, value):
@@ -100,6 +101,8 @@ def run_contexts(
     client,
     options,
     timeout,
+    tokenizer,
+    max_input_tokens,
 ):
     contexts = list(contexts)
     prepare_outputs(
@@ -118,6 +121,39 @@ def run_contexts(
         request_path = request_dir / (candidate_id + ".json")
         response_path = response_dir / (candidate_id + ".json")
         prompt = render_prompt(context, prompt_path)
+
+        try:
+            token_count = count_request_tokens(
+                tokenizer,
+                "",
+                prompt,
+            )
+            ensure_within_input_budget(
+                token_count,
+                max_input_tokens,
+            )
+        except ValueError as error:
+            append_jsonl(
+                error_path,
+                make_error(
+                    context,
+                    candidate_id,
+                    "context_window_exceeded",
+                    error,
+                ),
+            )
+            continue
+        except Exception as error:
+            append_jsonl(
+                error_path,
+                make_error(
+                    context,
+                    candidate_id,
+                    "tokenizer_error",
+                    error,
+                ),
+            )
+            continue
 
         def save_request(payload):
             write_json(request_path, payload)

@@ -1,4 +1,6 @@
-from vuln_detection.ollama import request_chat
+import pytest
+
+from vuln_detection.ollama import get_model_info, request_chat
 
 
 OPTIONS = {
@@ -135,3 +137,106 @@ def test_request_reports_payload_before_http_call(monkeypatch):
     )
 
     assert events == ["request"]
+
+
+def test_reads_the_configured_model_metadata(monkeypatch):
+    monkeypatch.setenv(
+        "OLLAMA_URL",
+        "http://127.0.0.1:11434/api/chat",
+    )
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+    class MetadataResponse:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self.payload = payload
+
+        def json(self):
+            return self.payload
+
+    class MetadataClient:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, timeout):
+            self.calls.append(
+                {
+                    "url": url,
+                    "timeout": timeout,
+                }
+            )
+
+            if url.endswith("/api/version"):
+                return MetadataResponse(
+                    200,
+                    {
+                        "version": "0.34.4",
+                    },
+                )
+
+            return MetadataResponse(
+                200,
+                {
+                    "models": [
+                        {
+                            "name": "qwen2.5-coder:7b",
+                            "digest": "test-digest",
+                        }
+                    ]
+                },
+            )
+
+    client = MetadataClient()
+
+    info = get_model_info(client, 120)
+
+    assert info == {
+        "tag": "qwen2.5-coder:7b",
+        "digest": "test-digest",
+        "ollama_version": "0.34.4",
+    }
+    assert client.calls == [
+        {
+            "url": "http://127.0.0.1:11434/api/version",
+            "timeout": 120,
+        },
+        {
+            "url": "http://127.0.0.1:11434/api/tags",
+            "timeout": 120,
+        },
+    ]
+
+
+def test_rejects_a_missing_configured_model(monkeypatch):
+    monkeypatch.setenv(
+        "OLLAMA_URL",
+        "http://127.0.0.1:11434/api/chat",
+    )
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+
+    class MetadataResponse:
+        status_code = 200
+
+        def json(self):
+            return {
+                "models": [],
+            }
+
+    class MetadataClient:
+        def get(self, url, timeout):
+            if url.endswith("/api/version"):
+                return type(
+                    "VersionResponse",
+                    (),
+                    {
+                        "status_code": 200,
+                        "json": lambda self: {
+                            "version": "0.34.4",
+                        },
+                    },
+                )()
+
+            return MetadataResponse()
+
+    with pytest.raises(ValueError, match="Configured Ollama model"):
+        get_model_info(MetadataClient(), 120)

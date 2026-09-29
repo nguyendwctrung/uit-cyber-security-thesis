@@ -25,3 +25,6 @@ datasets/work/
 
 # Generated experiment evidence: preserve locally by run ID, but do not commit it
 artifacts/
+
+# Downloaded tokenizer assets
+.cache/
